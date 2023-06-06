@@ -27,3 +27,4 @@ riscv-on-ppc64-gcc15-121689.patch
 # ubuntu patches
 ubuntu/enable-svm-by-default.patch
 ubuntu/define-ubuntu-machine-types.patch
+ubuntu/pre-bionic-256k-ipxe-efi-roms.patch
