@@ -459,6 +459,24 @@ static void host_memory_backend_set_share(Object *o, bool value, Error **errp)
     backend->share = value;
 }
 
+static bool host_memory_backend_get_nocreate(Object *o, Error **errp)
+{
+    HostMemoryBackend *backend = MEMORY_BACKEND(o);
+
+    return backend->nocreate;
+}
+
+static void host_memory_backend_set_nocreate(Object *o, bool value, Error **errp)
+{
+    HostMemoryBackend *backend = MEMORY_BACKEND(o);
+
+    if (host_memory_backend_mr_inited(backend)) {
+        error_setg(errp, "cannot change property value");
+        return;
+    }
+    backend->nocreate = value;
+}
+
 #ifdef CONFIG_LINUX
 static bool host_memory_backend_get_reserve(Object *o, Error **errp)
 {
@@ -575,6 +593,10 @@ host_memory_backend_class_init(ObjectClass *oc, void *data)
     object_class_property_add_bool(oc, "x-use-canonical-path-for-ramblock-id",
         host_memory_backend_get_use_canonical_path,
         host_memory_backend_set_use_canonical_path);
+    object_class_property_add_bool(oc, "nocreate",
+        host_memory_backend_get_nocreate, host_memory_backend_set_nocreate);
+    object_class_property_set_description(oc, "nocreate",
+        "Avoids creating memory-backend-file when it does not exist");
 }
 
 static const TypeInfo host_memory_backend_info = {

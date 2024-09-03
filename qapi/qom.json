@@ -665,6 +665,10 @@
 # @mem-path: the path to either a shared memory or huge page
 #     filesystem mount
 #
+# @nocreate: if true, a failure is returned when the backing file
+#     does not exist; if false, the backing file is created when the
+#     file does not exist.  (default: false)
+#
 # @pmem: specifies whether the backing file specified by @mem-path is
 #     in host persistent memory that can be accessed using the SNIA
 #     NVM programming model (e.g. Intel NVDIMM).
@@ -695,6 +699,7 @@
             '*offset': 'size',
             '*discard-data': 'bool',
             'mem-path': 'str',
+            '*nocreate': 'bool',
             '*pmem': { 'type': 'bool', 'if': 'CONFIG_LIBPMEM' },
             '*readonly': 'bool',
             '*rom': 'OnOffAuto' } }

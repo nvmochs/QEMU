@@ -1323,6 +1323,7 @@ static int64_t get_file_align(int fd)
 static int file_ram_open(const char *path,
                          const char *region_name,
                          bool readonly,
+                         bool nocreate,
                          bool *created)
 {
     char *filename;
@@ -1357,7 +1358,7 @@ static int file_ram_open(const char *path,
             break;
         }
         if (errno == ENOENT) {
-            if (readonly) {
+            if (readonly || nocreate) {
                 /* Refuse to create new, readonly files. */
                 return -ENOENT;
             }
@@ -2031,11 +2032,12 @@ RAMBlock *qemu_ram_alloc_from_file(ram_addr_t size, MemoryRegion *mr,
                                    off_t offset, Error **errp)
 {
     int fd;
+    bool nocreate = ram_flags & RAM_FILE_NOCREATE;
     bool created;
     RAMBlock *block;
 
     fd = file_ram_open(mem_path, memory_region_name(mr),
-                       !!(ram_flags & RAM_READONLY_FD), &created);
+                       !!(ram_flags & RAM_READONLY_FD), nocreate, &created);
     if (fd < 0) {
         error_setg_errno(errp, -fd, "can't open backing store %s for guest RAM",
                          mem_path);
@@ -2047,7 +2049,7 @@ RAMBlock *qemu_ram_alloc_from_file(ram_addr_t size, MemoryRegion *mr,
              * to consume such files and get RAM instead of ROM.
              */
             fd = file_ram_open(mem_path, memory_region_name(mr), true,
-                               &created);
+                               nocreate, &created);
             if (fd < 0) {
                 return NULL;
             }
@@ -2061,7 +2063,8 @@ RAMBlock *qemu_ram_alloc_from_file(ram_addr_t size, MemoryRegion *mr,
         return NULL;
     }
 
-    block = qemu_ram_alloc_from_fd(size, mr, ram_flags, fd, offset, errp);
+    block = qemu_ram_alloc_from_fd(size, mr, ram_flags & ~RAM_FILE_NOCREATE,
+                                   fd, offset, errp);
     if (!block) {
         if (created) {
             unlink(mem_path);
