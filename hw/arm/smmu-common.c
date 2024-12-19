@@ -1016,7 +1016,7 @@ free_virq:
     g_free(viommu->core);
 free_viommu:
     g_free(viommu);
-    host_iommu_device_iommufd_attach_hwpt(idev, sdev->idev->ioas_id, errp);
+    host_iommu_device_iommufd_attach_hwpt(idev, idev->ioas_id, errp);
 free_s2_hwpt:
     iommufd_backend_free_id(idev->iommufd, s2_hwpt_id);
     return false;
