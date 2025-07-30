@@ -1779,6 +1779,11 @@ static void vfio_bar_register(VFIOPCIDevice *vdev, int nr)
         if (vfio_region_mmap(&bar->region)) {
             error_report("Failed to mmap %s BAR %d. Performance may be slow",
                          vdev->vbasedev.name, nr);
+        } else if (vdev->allow_direct_memory_access) {
+            /* Mark all mapped regions as allowing direct DMA if enabled */
+            for (int j = 0; j < bar->region.nr_mmaps; j++) {
+                memory_region_set_allow_direct_dma(&bar->region.mmaps[j].mem, true);
+            }
         }
     }
 
@@ -3453,6 +3458,7 @@ static const Property vfio_pci_dev_nohotplug_properties[] = {
     DEFINE_PROP_BOOL("ramfb", VFIOPCIDevice, enable_ramfb, false),
     DEFINE_PROP_ON_OFF_AUTO("x-ramfb-migrate", VFIOPCIDevice, ramfb_migrate,
                             ON_OFF_AUTO_AUTO),
+    DEFINE_PROP_BOOL("allow-direct-memory-access", VFIOPCIDevice, allow_direct_memory_access, false),
 };
 
 static void vfio_pci_nohotplug_dev_class_init(ObjectClass *klass, void *data)

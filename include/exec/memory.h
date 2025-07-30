@@ -808,6 +808,9 @@ struct MemoryRegion {
 
     /* For devices designed to perform re-entrant IO into their own IO MRs */
     bool disable_reentrancy_guard;
+
+    /* Allow direct DMA access to this ram_device region */
+    bool allow_direct_dma;
 };
 
 struct IOMMUMemoryRegion {
@@ -2423,6 +2426,17 @@ void memory_region_set_alias_offset(MemoryRegion *mr,
 void memory_region_set_unmergeable(MemoryRegion *mr, bool unmergeable);
 
 /**
+ * memory_region_set_allow_direct_dma: Set a ram_device region as safe for direct DMA
+ *
+ * Mark a ram_device memory region as safe for direct DMA access,
+ * bypassing bounce buffers.
+ *
+ * @mr: the #MemoryRegion to be marked
+ * @allow: whether this region supports direct DMA
+ */
+void memory_region_set_allow_direct_dma(MemoryRegion *mr, bool allow);
+
+/**
  * memory_region_present: checks if an address relative to a @container
  * translates into #MemoryRegion within @container
  *
@@ -2999,9 +3013,11 @@ static inline bool memory_access_is_direct(MemoryRegion *mr, bool is_write)
 {
     if (is_write) {
         return memory_region_is_ram(mr) && !mr->readonly &&
-               !mr->rom_device && !memory_region_is_ram_device(mr);
+               !mr->rom_device &&
+               (!memory_region_is_ram_device(mr) || mr->allow_direct_dma);
     } else {
-        return (memory_region_is_ram(mr) && !memory_region_is_ram_device(mr)) ||
+        return (memory_region_is_ram(mr) &&
+                (!memory_region_is_ram_device(mr) || mr->allow_direct_dma)) ||
                memory_region_is_romd(mr);
     }
 }

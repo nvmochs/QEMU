@@ -1308,6 +1308,7 @@ static void memory_region_initfn(Object *obj)
     mr->ops = &unassigned_mem_ops;
     mr->enabled = true;
     mr->romd_mode = true;
+    mr->allow_direct_dma = false;
     mr->destructor = memory_region_destructor_none;
     QTAILQ_INIT(&mr->subregions);
     QTAILQ_INIT(&mr->coalesced);
@@ -1721,6 +1722,9 @@ void memory_region_init_ram_device_ptr(MemoryRegion *mr,
     mr->ops = &ram_device_mem_ops;
     mr->opaque = mr;
     mr->destructor = memory_region_destructor_ram;
+
+    /* Direct DMA capability must be explicitly enabled per region */
+    mr->allow_direct_dma = false;
 
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
     assert(ptr != NULL);
@@ -2780,6 +2784,12 @@ void memory_region_set_unmergeable(MemoryRegion *mr, bool unmergeable)
     mr->unmergeable = unmergeable;
     memory_region_update_pending |= mr->enabled;
     memory_region_transaction_commit();
+}
+
+void memory_region_set_allow_direct_dma(MemoryRegion *mr, bool allow)
+{
+    assert(memory_region_is_ram_device(mr));
+    mr->allow_direct_dma = allow;
 }
 
 uint64_t memory_region_get_alignment(const MemoryRegion *mr)
