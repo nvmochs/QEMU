@@ -46,19 +46,19 @@ Further we want to avoid "machine type proliferation", so we certainly won't
 add a type for every feature. But using a huge guest is more common and
 otherwise not yet achievable.
 
-This can be dropped when:
- - libvirt exposes phys-bits/host-phys-bits natively
- - at least the important stacks above exploit that config
-As an alternative we might decide at some point to make it the default without
-a way to switch back in following releases, but for now we don't want to do so.
+From Noble onwards, we do not add the -hpb machine variants
+because they are not needed by OpenStack anymore.  For more information, see:
+
+https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/1769053
+https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/2045592
 
 ##
 
 This later on got extended by further ubuntu specific machine type changes:
 LP 1761372: special type for ppc64 meltdown/spectre defaults
 
-Upstresm 2.12 is not yet set in stone (almost but not full), and we ship 2.11
-with backports. SO we don't want to make a 2.12 machine type fully recommended
+Upstream 2.12 is not yet set in stone (almost but not full), and we ship 2.11
+with backports. So we don't want to make a 2.12 machine type fully recommended
 yet.
 PPC was following x86 in providing a non default convenience type that has the
 spectre/meltdown flags toggled - in bug 1761372 we were requested to carry the
@@ -97,14 +97,6 @@ that Precise/Utopic/Vivid are out of support.
 
 ##
 
-From Noble onwards, we do not add the -hpb machine variants
-because they are not needed by OpenStack anymore.  For more information, see:
-
-https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/1769053
-https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/2045592
-
-##
-
 For Jammy and Mantic, qemu-system-amd64 needed to be patched to
 support more than 288 vCPUs inside a VM.  This was done by backporting
 a specific upstream change.  On top of that, and because we offer our
@@ -124,10 +116,10 @@ Original-Author: Serge Hallyn <serge.hallyn@ubuntu.com>
 Original-Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/1304107
 Author: Christian Ehrhardt <christian.ehrhardt@canonical.com>
 Author: Sergio Durigan Junior <sergio.durigan@canonical.com>
-Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/1621042
 Bug-Ubuntu: https://bugs.launchpad.net/bugs/1776189
 Bug-Ubuntu: https://bugs.launchpad.net/bugs/1761372
-Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/qemu/+bug/1829868
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1769053
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/2012763
 Forwarded: not-needed
 Forward-info: downstream decision
 ---
@@ -141,44 +133,9 @@ Forward-info: downstream decision
  include/hw/i386/pc.h       |   3 +
  8 files changed, 849 insertions(+), 11 deletions(-)
 
---- a/hw/core/machine.c
-+++ b/hw/core/machine.c
-@@ -289,15 +289,27 @@ GlobalProperty hw_compat_2_5[] = {
- };
- const size_t hw_compat_2_5_len = G_N_ELEMENTS(hw_compat_2_5);
- 
-+#define HW_COMPAT_2_4_DEFS \
-+    { "e1000", "extra_mac_registers", "off" }, \
-+    { "virtio-pci", "x-disable-pcie", "on" }, \
-+    { "virtio-pci", "migrate-extra", "off" }, \
-+    { "fw_cfg_mem", "dma_enabled", "off" }, \
-+    { "fw_cfg_io", "dma_enabled", "off" },
-+
- GlobalProperty hw_compat_2_4[] = {
--    { "e1000", "extra_mac_registers", "off" },
--    { "virtio-pci", "x-disable-pcie", "on" },
--    { "virtio-pci", "migrate-extra", "off" },
--    { "fw_cfg_mem", "dma_enabled", "off" },
--    { "fw_cfg_io", "dma_enabled", "off" }
-+    HW_COMPAT_2_4_DEFS
- };
- const size_t hw_compat_2_4_len = G_N_ELEMENTS(hw_compat_2_4);
- 
-+// workaround for bug 1902654 / 1829868, see pc_i440fx_wily_machine_options in hw/i386/pc_piix.c
-+GlobalProperty hw_compat_2_4_wily[] = {
-+    HW_COMPAT_2_4_DEFS
-+    { "migration", "send-configuration", "off" },
-+    { "migration", "send-section-footer", "off" },
-+    { "migration", "store-global-state", "off" },
-+};
-+const size_t hw_compat_2_4_wily_len = G_N_ELEMENTS(hw_compat_2_4_wily);
-+
- MachineState *current_machine;
- 
- static char *machine_get_kernel(Object *obj, Error **errp)
 --- a/hw/i386/pc.c
 +++ b/hw/i386/pc.c
-@@ -170,6 +170,11 @@ const size_t pc_compat_4_1_len = G_N_ELE
+@@ -178,6 +178,11 @@ const size_t pc_compat_4_1_len = G_N_ELE
  GlobalProperty pc_compat_4_0[] = {};
  const size_t pc_compat_4_0_len = G_N_ELEMENTS(pc_compat_4_0);
  
@@ -192,7 +149,7 @@ Forward-info: downstream decision
      { "Opteron_G3" "-" TYPE_X86_CPU, "rdtscp", "off" },
 --- a/hw/i386/pc_piix.c
 +++ b/hw/i386/pc_piix.c
-@@ -455,8 +455,27 @@ static void pc_i440fx_init(MachineState
+@@ -478,8 +478,27 @@ static void pc_i440fx_init(MachineState
  #define LATEST_IS_DEFAULT true
  #endif
  
@@ -221,26 +178,12 @@ Forward-info: downstream decision
  
  static void pc_i440fx_machine_options(MachineClass *m)
  {
-@@ -849,3 +868,373 @@ static void xenfv_machine_3_1_options(Ma
+@@ -857,3 +876,308 @@ static void xenfv_machine_3_1_options(Ma
  DEFINE_PC_MACHINE(xenfv, "xenfv-3.1", pc_xen_hvm_init,
                    xenfv_machine_3_1_options);
  #endif
 +
 +/* Ubuntu machine types */
-+static void pc_trusty_machine_options(MachineClass *m)
-+{
-+    pc_i440fx_machine_2_5_options(m);
-+    m->desc = "Ubuntu 14.04 PC (i440FX + PIIX, 1996)";
-+}
-+DEFINE_UBUNTU_I440FX_MACHINE(trusty);
-+
-+static void pc_xenial_machine_options(MachineClass *m)
-+{
-+    pc_i440fx_machine_2_5_options(m);
-+    m->desc = "Ubuntu 16.04 PC (i440FX + PIIX, 1996)";
-+}
-+DEFINE_UBUNTU_I440FX_MACHINE(xenial);
-+
 +static void pc_yakkety_machine_options(MachineClass *m)
 +{
 +    pc_i440fx_machine_2_6_options(m);
@@ -544,60 +487,9 @@ Forward-info: downstream decision
 +    m->is_default = LATEST_IS_DEFAULT;
 +}
 +DEFINE_UBUNTU_I440FX_MACHINE(questing);
-+
-+/*
-+ * Due to bug 1621042 we have to consider the broken old wily machine
-+ * type as valid xenial type to ensure older VMs that got created prio
-+ * to fixing 1621042 will still work.
-+ * Therefore we have to keep it as-is (sans alias and being default) for
-+ * the same time we keep the fixed xenial type above.
-+ *
-+ * Further bug 1829868 identified issues due to the wily type being released
-+ * defined as a hybrid of pc_i440fx_2_4_machine_options and pc_compat_2_3.
-+ * That mismatch caused issues since qemu 2.11 due to some definitions
-+ * moving between those version references.
-+ * This introduces pc_i440fx_wily_machine_options which encapsulates the
-+ * old behavior as it was (this is the purpose of machine types).
-+ *
-+ * Further bug 1902654 identified issues due to the upstream rework of types
-+ * that made the wily type change some attributes in >=Eoan.
-+ * As we did in Bionic for 1829868 we need to use a 2_4/2_3 hybrid type to
-+ * match what was initially shipped.
-+ *
-+ * While preparing for the 24.04 (Noble) release, a bug was discovered
-+ * in the pc_wily_machine_options function.  It was calling
-+ * pc_i440fx_machine_options after the existing call to
-+ * pc_i440fx_wily_machine_options, which, due to upstream commit
-+ * aa0c9aec575f6dba4e6548ad9e5de1b1899d843e, would lead to an
-+ * assertion being triggered.  This was a mistake because
-+ * pc_i440fx_wily_machine_options will eventually call
-+ * pc_i440fx_machine_options.  This also means that, up until Mantic
-+ * (23.10), all definitions of the wily machine type are actually much
-+ * more recent machine type definitions.  Having this bug fixed now
-+ * for 24.04 means that any existing VM using the wily machine type
-+ * will be suddenly downgraded to the qemu 2.5 machine type, though.
-+ */
-+static void pc_i440fx_wily_machine_options(MachineClass *m)
-+{
-+    PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
-+    pc_i440fx_machine_2_5_options(m);
-+    m->hw_version = "2.4.0";
-+    pcmc->broken_reserved_end = true;
-+    compat_props_add(m->compat_props, hw_compat_2_4_wily, hw_compat_2_4_wily_len);
-+    compat_props_add(m->compat_props, pc_compat_2_4, pc_compat_2_4_len);
-+}
-+
-+static void pc_wily_machine_options(MachineClass *m)
-+{
-+    pc_i440fx_wily_machine_options(m);
-+    m->desc = "Ubuntu 15.04 PC (i440FX + PIIX, 1996)",
-+    m->default_display = "std";
-+}
-+
-+DEFINE_UBUNTU_I440FX_MACHINE(wily);
 --- a/hw/i386/pc_q35.c
 +++ b/hw/i386/pc_q35.c
-@@ -336,6 +336,20 @@ static void pc_q35_init(MachineState *ma
+@@ -349,6 +349,20 @@ static void pc_q35_init(MachineState *ma
  #define DEFINE_Q35_MACHINE_BUGFIX(major, minor, micro) \
      DEFINE_PC_VER_MACHINE(pc_q35, "pc-q35", pc_q35_init, false, NULL, major, minor, micro);
  
@@ -618,19 +510,12 @@ Forward-info: downstream decision
  static void pc_q35_machine_options(MachineClass *m)
  {
      PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
-@@ -689,3 +703,317 @@ static void pc_q35_machine_2_4_options(M
+@@ -685,3 +699,310 @@ static void pc_q35_machine_2_6_options(M
  }
  
- DEFINE_Q35_MACHINE(2, 4);
+ DEFINE_Q35_MACHINE(2, 6);
 +
 +/* Ubuntu machine types */
-+static void pc_q35_xenial_machine_options(MachineClass *m)
-+{
-+    pc_q35_machine_2_5_options(m);
-+    m->desc = "Ubuntu 16.04 PC (Q35 + ICH9, 2009)";
-+}
-+DEFINE_UBUNTU_Q35_MACHINE(xenial);
-+
 +static void pc_q35_yakkety_machine_options(MachineClass *m)
 +{
 +    pc_q35_machine_2_6_options(m);
@@ -929,7 +814,7 @@ Forward-info: downstream decision
 +
 +static void pc_q35_questing_machine_options(MachineClass *m)
 +{
-+    pc_q35_machine_10_0_options(m);
++    pc_q35_machine_10_1_options(m);
 +    m->desc = "Ubuntu 25.10 PC (Q35 + ICH9, 2009)";
 +    /* The ubuntu alias and default is on the i440fx type. The
 +     * ubuntu-q35 alias auto-picks the most recent ubuntu q35 type */
@@ -938,7 +823,7 @@ Forward-info: downstream decision
 +DEFINE_UBUNTU_Q35_MACHINE(questing);
 --- a/hw/ppc/spapr.c
 +++ b/hw/ppc/spapr.c
-@@ -4766,6 +4766,42 @@ static void spapr_machine_latest_class_o
+@@ -4761,6 +4761,42 @@ static void spapr_machine_latest_class_o
  #define DEFINE_SPAPR_MACHINE(major, minor) \
      DEFINE_SPAPR_MACHINE_IMPL(false, major, minor)
  
@@ -950,7 +835,7 @@ Forward-info: downstream decision
 +#define DEFINE_SPAPR_UBUNTU_MACHINE_IMPL(latest, prefix, machinename, ...) \
 +    static void MACHINE_VER_SYM(class_init, prefix, __VA_ARGS__)(     \
 +        ObjectClass *oc,                                             \
-+        void *data)                                                  \
++        const void *data)                                                  \
 +    {                                                                \
 +        MachineClass *mc = MACHINE_CLASS(oc);                        \
 +        MACHINE_VER_SYM(class_options, spapr, __VA_ARGS__)(mc);      \
@@ -979,18 +864,18 @@ Forward-info: downstream decision
 +
 +
  /*
-  * pseries-10.0
+  * pseries-10.1
   */
-@@ -4774,7 +4810,7 @@ static void spapr_machine_10_0_class_opt
+@@ -4769,7 +4805,7 @@ static void spapr_machine_10_1_class_opt
      /* Defaults for the latest behaviour inherited from the base class */
  }
  
--DEFINE_SPAPR_MACHINE_AS_LATEST(10, 0);
-+DEFINE_SPAPR_MACHINE(10, 0);
+-DEFINE_SPAPR_MACHINE_AS_LATEST(10, 1);
++DEFINE_SPAPR_MACHINE(10, 1);
  
  /*
-  * pseries-9.2
-@@ -5067,3 +5103,18 @@ static void spapr_machine_register_types
+  * pseries-10.0
+@@ -5073,3 +5109,18 @@ static void spapr_machine_register_types
  }
  
  type_init(spapr_machine_register_types)
@@ -1008,10 +893,10 @@ Forward-info: downstream decision
 +DEFINE_SPAPR_UBUNTU_MACHINE(noble, 8, 2);
 +DEFINE_SPAPR_UBUNTU_MACHINE(oracular, 9, 0);
 +DEFINE_SPAPR_UBUNTU_MACHINE(plucky, 9, 2);
-+DEFINE_SPAPR_UBUNTU_MACHINE_AS_LATEST(questing, 10, 0);
++DEFINE_SPAPR_UBUNTU_MACHINE_AS_LATEST(questing, 10, 1);
 --- a/hw/s390x/s390-virtio-ccw.c
 +++ b/hw/s390x/s390-virtio-ccw.c
-@@ -921,6 +921,59 @@ static const TypeInfo ccw_machine_info =
+@@ -910,6 +910,58 @@ static const TypeInfo ccw_machine_info =
  #define DEFINE_CCW_MACHINE(major, minor) \
      DEFINE_CCW_MACHINE_IMPL(false, major, minor)
  
@@ -1031,13 +916,12 @@ Forward-info: downstream decision
 +#define DEFINE_CCW_UBUNTU_MACHINE_IMPL(latest, prefix, machinename, ...)      \
 +    static void MACHINE_VER_SYM(mach_init, prefix, __VA_ARGS__)(MachineState *mach) \
 +    {                                                                         \
-+        current_mc = S390_CCW_MACHINE_CLASS(MACHINE_GET_CLASS(mach));         \
 +        MACHINE_VER_SYM(instance_options, ccw, __VA_ARGS__)(mach);            \
 +        ccw_init(mach);                                                       \
 +    }                                                                         \
 +    static void MACHINE_VER_SYM(class_init, prefix, __VA_ARGS__)(                \
 +        ObjectClass *oc,                                                      \
-+        void *data)                                                           \
++        const void *data)                                                           \
 +    {                                                                         \
 +        MachineClass *mc = MACHINE_CLASS(oc);                                 \
 +        MACHINE_VER_SYM(class_options, ccw, __VA_ARGS__)(mc);                 \
@@ -1069,27 +953,22 @@ Forward-info: downstream decision
 +    DEFINE_CCW_UBUNTU_MACHINE_IMPL(true, ccw_ubuntu_##release, \
 +                                   "s390-ccw-virtio-" #release, major, minor)
  
- static void ccw_machine_10_0_instance_options(MachineState *machine)
+ static void ccw_machine_10_1_instance_options(MachineState *machine)
  {
-@@ -929,7 +982,7 @@ static void ccw_machine_10_0_instance_op
- static void ccw_machine_10_0_class_options(MachineClass *mc)
+@@ -918,7 +970,7 @@ static void ccw_machine_10_1_instance_op
+ static void ccw_machine_10_1_class_options(MachineClass *mc)
  {
  }
--DEFINE_CCW_MACHINE_AS_LATEST(10, 0);
-+DEFINE_CCW_MACHINE(10, 0);
+-DEFINE_CCW_MACHINE_AS_LATEST(10, 1);
++DEFINE_CCW_MACHINE(10, 1);
  
- static void ccw_machine_9_2_instance_options(MachineState *machine)
+ static void ccw_machine_10_0_instance_options(MachineState *machine)
  {
-@@ -1297,6 +1350,25 @@ DEFINE_CCW_MACHINE(2, 9);
- 
- #endif
+@@ -1167,6 +1219,20 @@ static void ccw_machine_4_2_class_option
+ }
+ DEFINE_CCW_MACHINE(4, 2);
  
 +/* Ubuntu machine types */
-+DEFINE_CCW_UBUNTU_MACHINE(artful, 2, 10);
-+DEFINE_CCW_UBUNTU_MACHINE(bionic, 2, 11);
-+DEFINE_CCW_UBUNTU_MACHINE(cosmic, 2, 12);
-+DEFINE_CCW_UBUNTU_MACHINE(disco, 3, 1);
-+DEFINE_CCW_UBUNTU_MACHINE(eoan, 3, 1);
 +DEFINE_CCW_UBUNTU_MACHINE(focal, 4, 2);
 +DEFINE_CCW_UBUNTU_MACHINE(groovy, 5, 0);
 +DEFINE_CCW_UBUNTU_MACHINE(hirsute, 5, 2);
@@ -1101,25 +980,14 @@ Forward-info: downstream decision
 +DEFINE_CCW_UBUNTU_MACHINE(noble, 8, 2);
 +DEFINE_CCW_UBUNTU_MACHINE(oracular, 9, 0);
 +DEFINE_CCW_UBUNTU_MACHINE(plucky, 9, 2);
-+DEFINE_CCW_UBUNTU_MACHINE_AS_LATEST(questing, 10, 0);
++DEFINE_CCW_UBUNTU_MACHINE_AS_LATEST(questing, 10, 1);
 +
  static void ccw_machine_register_types(void)
  {
      type_register_static(&ccw_machine_info);
---- a/include/hw/boards.h
-+++ b/include/hw/boards.h
-@@ -848,4 +848,8 @@ extern const size_t hw_compat_2_5_len;
- extern GlobalProperty hw_compat_2_4[];
- extern const size_t hw_compat_2_4_len;
- 
-+// workaround for bug 1902654 / 1829868, see pc_i440fx_wily_machine_options in hw/i386/pc_piix.c
-+extern GlobalProperty hw_compat_2_4_wily[];
-+extern const size_t hw_compat_2_4_wily_len;
-+
- #endif
 --- a/include/hw/i386/pc.h
 +++ b/include/hw/i386/pc.h
-@@ -269,6 +269,9 @@ extern const size_t pc_compat_4_1_len;
+@@ -271,6 +271,9 @@ extern const size_t pc_compat_4_1_len;
  extern GlobalProperty pc_compat_4_0[];
  extern const size_t pc_compat_4_0_len;
  
