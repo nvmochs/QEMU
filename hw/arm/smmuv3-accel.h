@@ -37,7 +37,7 @@ typedef struct SMMUS1Hwpt {
 
 typedef struct SMMUv3AccelDevice {
     SMMUDevice  sdev;
-    AddressSpace as_sysmem;
+    AddressSpace *as_sysmem;
     HostIOMMUDeviceIOMMUFD *idev;
     SMMUS1Hwpt  *s1_hwpt;
     SMMUViommu *viommu;

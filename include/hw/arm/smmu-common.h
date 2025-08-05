@@ -168,6 +168,8 @@ struct SMMUState {
 struct SMMUBaseClass {
     /* <private> */
     SysBusDeviceClass parent_class;
+    /* FIXME is there any better shared place for different vSMMU instances? */
+    AddressSpace *as_sysmem;
 
     /*< public >*/
 

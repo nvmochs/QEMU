@@ -370,13 +370,19 @@ static SMMUv3AccelDevice *smmuv3_accel_get_dev(SMMUState *bs, SMMUPciBus *sbus,
     if (sdev) {
         accel_dev = container_of(sdev, SMMUv3AccelDevice, sdev);
     } else {
+        SMMUBaseClass *sbc = ARM_SMMU_GET_CLASS(s);
+
         accel_dev = g_new0(SMMUv3AccelDevice, 1);
         sdev = &accel_dev->sdev;
 
         sbus->pbdev[devfn] = sdev;
         smmu_init_sdev(bs, sdev, bus, devfn);
-        address_space_init(&accel_dev->as_sysmem, &s->s_accel->root,
-                           "smmuv3-accel-sysmem");
+        if (!sbc->as_sysmem) {
+            sbc->as_sysmem = g_new0(AddressSpace, 1);
+            address_space_init(sbc->as_sysmem, &s->s_accel->root,
+                               "smmuv3-accel-sysmem");
+        }
+        accel_dev->as_sysmem = sbc->as_sysmem;
     }
 
     return accel_dev;
@@ -558,7 +564,7 @@ static AddressSpace *smmuv3_accel_find_msi_as(PCIBus *bus, void *opaque,
     if (accel_dev->s1_hwpt) {
         return &sdev->as;
     } else {
-        return &accel_dev->as_sysmem;
+        return accel_dev->as_sysmem;
     }
 }
 
@@ -599,7 +605,7 @@ static AddressSpace *smmuv3_accel_find_add_as(PCIBus *bus, void *opaque,
     sdev = &accel_dev->sdev;
 
     if (vfio_pci) {
-        return &accel_dev->as_sysmem;
+        return accel_dev->as_sysmem;
     } else {
         return &sdev->as;
     }
