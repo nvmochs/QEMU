@@ -282,7 +282,9 @@ Package: qemu-system-data
 Architecture: all
 Multi-Arch: foreign
 Replaces: qemu-system-common (<< 1:8.2.2+ds-1~),
+:ubuntu:  qemu-system-misc (<< 1:10.1.0~rc2+ds-1),
 Breaks:   qemu-system-common (<< 1:8.2.2+ds-1~),
+:ubuntu:  qemu-system-misc (<< 1:10.1.0~rc2+ds-1),
 # s390x-netboot dropped in 9.2, breaks qemu-system-s390x
 :debian: qemu-system-misc (<< 1:9.1.1+ds-1~),
  qemu-system-s390x (<< 1:9.2.0~),
@@ -368,6 +370,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
 # Downgrade to Recommends for one release cycle once tests are fixed
  qemu-system-riscv,
 :debian: qemu-system-s390x,
+:ubuntu:Breaks:   qemu-system-data (<< 1:10.1.0~rc2+ds-1),
 Recommends: qemu-utils,
 # alpha uses vgabios
 # alpha m68k sh4 uses bootroms
