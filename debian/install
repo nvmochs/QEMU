@@ -1,0 +1,2 @@
+usr/local/bin/qemu-system-aarch64 usr/local/bin/
+usr/local/share/qemu/* usr/local/share/qemu/

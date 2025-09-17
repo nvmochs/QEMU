@@ -1,0 +1,5 @@
+qemu (10.1.0-nvidia.1001.1) noble; urgency=medium
+
+  * NVIDIA fork of qemu.
+
+ -- Matthew R. Ochs <mochs@nvidia.com>  Sat, 02 Aug 2025 01:51:36 +0000

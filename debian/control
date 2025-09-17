@@ -1,0 +1,50 @@
+Source: qemu
+Maintainer: dgx-dev <dgx-dev@nvidia.com>
+Section: misc
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13),
+               git,
+               libfdt-dev,
+               libslirp-dev,
+               libglib2.0-dev,
+               libpixman-1-dev,
+               meson,
+               ninja-build,
+               pkg-config,
+               python3,
+               python3-venv
+
+Package: qemu-nvidia
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         libc6,
+         libfdt1,
+         libglib2.0-0,
+         libpixman-1-0,
+         libslirp0,
+         zlib1g
+Recommends: qemu-efi-aarch64
+Architecture: arm64
+Description: NVIDIA's QEMU fork - AArch64 system emulator (local install)
+ NVIDIA's QEMU fork providing AArch64 system emulation with KVM acceleration.
+ .
+ This package installs to /usr/local to avoid conflicts with system QEMU packages.
+ .
+ QEMU is a fast processor emulator: currently the package supports
+ AArch64 emulation. By using dynamic translation it achieves
+ reasonable speed while being easy to port on new host CPUs.
+ .
+ This package provides the system emulation for AArch64, in which
+ a complete AArch64 system is emulated in a virtual machine.
+ .
+ Features enabled:
+  - KVM acceleration for better performance
+  - Vhost networking for efficient network I/O
+  - Device Tree support for ARM systems
+  - SLIRP networking for user-mode networking
+  - Debug symbols for troubleshooting
+ .
+ The executable will be available as qemu-system-aarch64 in /usr/local/bin
+ .
+ It is recommended to also install qemu-efi-aarch64 for UEFI firmware support.

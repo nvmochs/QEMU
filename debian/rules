@@ -1,0 +1,51 @@
+#!/usr/bin/make -f
+
+DH_VERBOSE := 1
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	./configure --without-default-features \
+	            --target-list=aarch64-softmmu \
+	            --enable-kvm \
+	            --enable-vhost-net \
+	            --enable-fdt \
+	            --enable-debug \
+	            --enable-slirp \
+	            --prefix=/usr/local \
+	            --libdir=/usr/local/lib/aarch64-linux-gnu \
+	            --sysconfdir=/etc \
+	            --localstatedir=/var \
+	            --datadir=/usr/local/share/qemu \
+	            --mandir=/usr/local/share/man \
+	            --docdir=/usr/local/share/doc/qemu-nvidia
+
+override_dh_auto_build:
+	$(MAKE) -j$(nproc)
+
+override_dh_auto_install:
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/qemu-nvidia
+	# Copy files to the expected location for dh_install
+	mkdir -p debian/tmp
+	cp -r debian/qemu-nvidia/usr debian/tmp/
+
+override_dh_auto_clean:
+	$(MAKE) distclean || true
+	rm -rf build
+
+override_dh_auto_test:
+	# Skip all tests during package build
+	@echo "Skipping tests for package build"
+
+override_dh_usrlocal:
+	# Skip dh_usrlocal since we're installing to /usr/local intentionally
+	@echo "Skipping dh_usrlocal for /usr/local install"
+
+override_dh_strip:
+	# Skip stripping entirely to avoid issues with firmware files
+	@echo "Skipping stripping for package build"
+
+override_dh_builddeb:
+	# Override dh_builddeb to allow /usr/local installation
+	dh_builddeb
