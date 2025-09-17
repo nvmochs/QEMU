@@ -1,0 +1,34 @@
+Source: qemu
+Maintainer: dgx-dev <dgx-dev@nvidia.com>
+Section: misc
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13),
+               git,
+               libfdt-dev,
+               libslirp-dev,
+               libglib2.0-dev,
+               libpixman-1-dev,
+               meson,
+               ninja-build,
+               pkg-config,
+               python3,
+               python3-venv
+
+Package: qemu-nvidia
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         libc6,
+         libfdt1,
+         libglib2.0-0,
+         libpixman-1-0,
+         libslirp0,
+         zlib1g
+Provides: qemu-system-aarch64
+Conflicts: qemu-system-aarch64
+Replaces: qemu-system-aarch64
+Recommends: qemu-efi-aarch64
+Architecture: arm64
+Description: NVIDIA's QEMU fork - AArch64 system emulator
+ NVIDIA's QEMU fork providing AArch64 system emulation with KVM acceleration.
+ This package provides and replaces qemu-system-aarch64 to avoid conflicts.
