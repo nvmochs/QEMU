@@ -1,0 +1,50 @@
+#!/usr/bin/make -f
+
+DH_VERBOSE := 1
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	./configure --without-default-features \
+	            --target-list=aarch64-softmmu \
+	            --enable-kvm \
+	            --enable-vhost-net \
+	            --enable-fdt \
+	            --enable-debug \
+	            --enable-slirp \
+	            --prefix=/usr \
+	            --libdir=/usr/lib/aarch64-linux-gnu \
+	            --sysconfdir=/etc \
+	            --localstatedir=/var \
+	            --datadir=/usr/share/qemu-nvidia \
+	            --mandir=/usr/share/man \
+	            --docdir=/usr/share/doc/qemu-nvidia
+
+override_dh_auto_build:
+	$(MAKE) -j$(nproc)
+
+override_dh_auto_clean:
+	rm -rf debian/tmp
+	$(MAKE) distclean || true
+	rm -rf build
+
+override_dh_clean:
+	rm -rf debian/tmp
+	$(MAKE) distclean || true
+	rm -rf build
+	dh_clean
+
+override_dh_strip:
+	# Skip stripping entirely to avoid issues with firmware files
+	@echo "Skipping stripping for package build"
+
+override_dh_auto_install:
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/qemu-nvidia
+	mkdir -p debian/tmp
+	cp -LRf debian/qemu-nvidia/usr debian/tmp/usr
+	dh_install
+
+override_dh_auto_test:
+	# Skip all tests during package build
+	@echo "Skipping tests for package build"
