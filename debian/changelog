@@ -43,9 +43,6 @@ qemu (1:10.1.0+ds-5ubuntu1) questing; urgency=medium
       + SLOF would fail with old and new std, but works with updated headers
         matching the recent libgcc-15-dev package in questing leveraging
         /usr/lib/gcc/x86_64-linux-gnu/15/include/stdbool.h
-    - d/p/u/Revert-i386-cpu-Warn-about-why-CPUID_EXT_PDCM-is-not.patch
-      avoid issues in migration and save/restore in regard to the pdcm
-      feature.
     - d/control-in: B-D on multipath libs for multipath persist in
       qemu-pr-helper (LP 2117378)
     - d/control-in: breaks/replaces for dtb files moving qemu-system-misc
@@ -143,9 +140,6 @@ qemu (1:10.1.0+ds-1ubuntu1) questing; urgency=medium
       + SLOF would fail with old and new std, but works with updated headers
         matching the recent libgcc-15-dev package in questing leveraging
         /usr/lib/gcc/x86_64-linux-gnu/15/include/stdbool.h
-    - d/p/u/Revert-i386-cpu-Warn-about-why-CPUID_EXT_PDCM-is-not.patch
-      avoid issues in migration and save/restore in regard to the pdcm
-      feature.
   * Updated delta:
     - d/p/u/define-ubuntu-machine-types.patch: update to match 10.1
   * Added changes
