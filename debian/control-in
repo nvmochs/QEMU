@@ -7,7 +7,7 @@ Priority: optional
 Uploaders: Michael Tokarev <mjt@tls.msk.ru>
 Build-Depends: debhelper-compat (= 13),
  python3:any,
- meson (>> 0.63.0~), ninja-build,
+ meson (>> 0.63.0~) | meson-1.5, ninja-build,
  flex, bison,
 Build-Depends-Arch:
 # In comments below we also specify (system-specific) arguments
