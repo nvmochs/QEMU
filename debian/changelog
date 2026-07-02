@@ -1,3 +1,9 @@
+qemu (1:11.0.0+nvidia4-1) noble; urgency=medium
+
+  * CANONICAL: [Infrastructure] Update workflow actions to later version
+
+ -- Matthew R. Ochs <mochs@nvidia.com>  Thu, 02 Jul 2026 14:03:03 -0500
+
 qemu (1:11.0.0+nvidia3-1) noble; urgency=medium
 
   * NVIDIA: SAUCE: WAR: hw/vfio: Retry dma_map to bypass PFNMAP
